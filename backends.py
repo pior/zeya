@@ -46,13 +46,13 @@ import decoders
 
 # Serve data to the client at a rate of no higher than RATE_MULTIPLIER * (the
 # bitrate of the encoded data).
-RATE_MULTIPLIER = 2.0
+RATE_MULTIPLIER = 200.0
 
 # Attempt to write STREAM_CHUNK_SIZE bytes up to (but possibly less than)
 # STREAM_WRITE_FREQUENCY times per second. The maximum possible write rate with
 # these parameters is 8192 bytes * 128 Hz = 1MB/sec.
-STREAM_CHUNK_SIZE = 8192 #bytes
-STREAM_WRITE_FREQUENCY = 128.0 #Hz
+STREAM_CHUNK_SIZE = 64*1024 #bytes
+STREAM_WRITE_FREQUENCY = 10.0 #Hz
 
 class StreamGenerationError(Exception):
     """
