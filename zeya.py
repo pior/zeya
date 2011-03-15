@@ -167,6 +167,6 @@ if __name__ == '__main__':
     try:
         bottle.run(host=bind_address, port=port,
                    app=Gzipper(bottle.app()),
-                   server=bottle.CherryPyServer)
+                   server=bottle.PasteServer)
     except KeyboardInterrupt:
         pass
