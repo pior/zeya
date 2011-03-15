@@ -26,6 +26,7 @@ from __future__ import with_statement
 
 import os
 import sys
+import time
 import StringIO
 import threading
 import bottle
@@ -77,14 +78,14 @@ def get_backend(backend_type):
 
 @bottle.route('/getlibrary')
 def web_getlibrary():
-    bottle.response.content_type = 'text/html; charset=utf-8'
-    return library_repr
+    header = {'Content-Type': 'text/html; charset=utf-8'}
+    return bottle.conditionnal_response(library_repr, header=header,
+                                        etag=library_etag)
 
 @bottle.route('/getcontent')
 def web_getcontent():
     key = bottle.request.params.get('key', '')
     buffered = bottle.request.params.get('buffered', False)
-
     bottle.response.content_type = 'audio/ogg'
 
     if buffered:
@@ -94,17 +95,14 @@ def web_getcontent():
         return output_file
     else:
         (read_end, write_end) = os.pipe()
-        
         def backend_get_content():
             try:
-                output_file = os.fdopen(write_end, 'wb', 8192)
+                output_file = os.fdopen(write_end, 'wb')
                 backend.get_content(key, output_file, bitrate)
             except IOError:
                 pass
-
         threading.Thread(target=backend_get_content).start()
-
-        return os.fdopen(read_end, 'rb', 8192)
+        return os.fdopen(read_end, 'rb')
     
 @bottle.route('/')
 @bottle.route('/:filename')
@@ -153,19 +151,17 @@ if __name__ == '__main__':
     output = { 'library': filtered_library_contents,
                'playlists': playlists }
 
-    library_repr = json.dumps(output, ensure_ascii=False)            
+    library_repr = json.dumps(output, ensure_ascii=False)
+    library_etag = str(time.time())
+    
     basedir = os.path.abspath(os.path.dirname(os.path.realpath(sys.argv[0])))
     resource_basedir = os.path.join(basedir, 'resources')
     
-    if bind_address != '':
-        print "Binding to address %s" % bind_address
-    else:
-        bind_address = 'localhost'
-
-    print "Listening on port %d" % (port,)
     # Start up a web server.
     try:
-        bottle.run(host=bind_address, port=port,
+        bottle.debug(True)
+        bottle.run(host=bind_address or '0.0.0.0',
+                   port=port,
                    app=Gzipper(bottle.app()),
                    server=bottle.PasteServer)
     except KeyboardInterrupt:
